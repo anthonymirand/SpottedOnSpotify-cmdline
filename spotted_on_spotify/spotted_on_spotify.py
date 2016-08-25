@@ -165,6 +165,10 @@ def narrowSearch(results):
     return selected_track
 
 def main():
+
+    if len(sys.argv) > 1:
+        url = sys.argv[1]
+
     try:
         init()
         displayIntro()
@@ -176,7 +180,8 @@ def main():
 
         spotted.createPlaylist()
 
-        url = raw_input("Please enter a valid YouTube/SoundCloud URL: ")
+        if 'url' not in locals():
+            url = raw_input("Please enter a valid YouTube/SoundCloud URL: ")
         print "Finding matches..."
 
         results = audiojack.get_results(url)
