@@ -1,3 +1,0 @@
-[console_scripts]
-spotted-on-spotify = spotted_on_spotify.spotted_on_spotify:main
-
