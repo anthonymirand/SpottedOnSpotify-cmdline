@@ -1,0 +1,9 @@
+ffmpeg-normalize
+mutagen
+musicbrainzngs
+youtube_dl
+spotipy
+clint
+colorama
+termcolor
+pyfiglet

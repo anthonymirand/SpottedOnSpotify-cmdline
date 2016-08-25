@@ -1,0 +1,16 @@
+LICENSE
+MANIFEST.in
+setup.py
+etc/.DS_Store
+etc/environment.txt
+etc/version.txt
+spotted_on_spotify/__init__.py
+spotted_on_spotify/__main__.py
+spotted_on_spotify/audiojack.py
+spotted_on_spotify/spotted_on_spotify.py
+spotted_on_spotify.egg-info/PKG-INFO
+spotted_on_spotify.egg-info/SOURCES.txt
+spotted_on_spotify.egg-info/dependency_links.txt
+spotted_on_spotify.egg-info/entry_points.txt
+spotted_on_spotify.egg-info/requires.txt
+spotted_on_spotify.egg-info/top_level.txt
