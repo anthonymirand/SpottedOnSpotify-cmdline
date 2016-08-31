@@ -13,3 +13,6 @@ if len(info) == 3:
     os.environ['SPOTIPY_CLIENT_ID']     = str(info[0])
     os.environ['SPOTIPY_CLIENT_SECRET'] = str(info[1])
     os.environ['SPOTIPY_REDIRECT_URI']  = str(info[2])
+
+with open('./etc/FPCALC', 'r') as fpcalc:
+    os.environ['FPCALC'] = fpcalc.name

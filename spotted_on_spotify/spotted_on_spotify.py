@@ -6,29 +6,43 @@ from __future__ import unicode_literals
     spotted_on_spotify.spotted_on_spotify: provides entry point main().
 
     Python script to match YouTube and SoundCloud to their counterparts in Spotify.
-    Runs URL through a MusicBrainz search via [AudioJack](https://github.com/Blue9/AudioJack)
+    Runs URL through a MusicBrainz search via [AcoustID](https://github.com/beetbox/pyacoustid)
     to find the matching metadata and adds track match to user's Spotify account under
     a new playlist named 'Spotted on Spotify'.
 """
 
+import sys, os, re
+from urllib import ContentTooShortError
 
+# Visuals
 from colorama import init
 from termcolor import cprint 
 from pyfiglet import figlet_format
 from clint.textui import puts, colored
 
-import audiojack
-
-import sys, os
+# Audio Work
+import acoustid
+import youtube_dl
 import spotipy
 import spotipy.util as util
 
 with open('./etc/version.txt', 'r') as ver:
     VERSION = ver.read().splitlines()
 
-audiojack.set_useragent("Spotted on Spotify", VERSION)
-init(strip=not sys.stdout.isatty()) # strip colors if stdout is redirected
+init(strip=not sys.stdout.isatty())
+ACOUSTID_API_KEY = "qY3621bc1V"
 SPOTIPY_SCOPE = "playlist-modify-public"
+
+YOUTUBE_DL_OPTS = {
+    'format': 'bestaudio',
+    'postprocessors': [{
+        'key': 'FFmpegExtractAudio',
+        'preferredcodec': 'mp3',
+        'preferredquality': '256'
+    }],
+    'quiet': True,
+    'no_warnings': True
+}
 
 
 class SpottedOnSpotify:
@@ -40,64 +54,110 @@ class SpottedOnSpotify:
 
     def loginToSpotify(self):
         while True:
-            username = raw_input("Enter your Spotify username: ")
-            token = util.prompt_for_user_token(username, SPOTIPY_SCOPE)
-            if token:
-                self.username = username
-                self.sp = spotipy.Spotify(auth=token)
-                break
-            else:
-                puts(colored.red("Cannot get token for {0}".format(username)))
-                puts(colored.red("Please try again..."))
+            try:
+                username = raw_input("Enter your Spotify username: ")
+                token = util.prompt_for_user_token(username, SPOTIPY_SCOPE)
+                if token:
+                    self.username = username
+                    self.sp = spotipy.Spotify(auth=token)
+                    break
+                else:
+                    errorWarning("Cannot get token for {0}".format(username), color="red")
+                    errorExit("Please try again...", color="red")
+            except spotipy.client.SpotifyException as exc:
+                message = exc.msg.split(":\n ", 1)[1].encode('ascii', 'ignore')
+                errorExit("ERROR: Spotify service request failed: {0}".format(message), color="red")
 
     def createPlaylist(self):
         ''' Attempts to create custom playlist if it doesn't already exist. '''
-        playlists = self.sp.user_playlists(self.username)
-        for playlist in playlists['items']:
-            if playlist['owner']['id'] == self.username:
-                if playlist['name'] == "Spotted on Spotify":
-                    self.playlist = playlist
-                    break
-        else:
-            print "Creating 'Spotted on Spotify' playlist..."
-            while True:
-                playlist = self.sp.user_playlist_create(self.username, "Spotted on Spotify")
-                if playlist['name'] == "Spotted on Spotify":
-                    self.playlist = playlist
-                    print "Completed creating playlist..."
-                    break
-                else:
-                    self.sp.user_playlist_delete(self.username, playlist['name'])
+        try:
+            playlists = self.sp.user_playlists(self.username)
+            for playlist in playlists['items']:
+                if playlist['owner']['id'] == self.username:
+                    if playlist['name'] == "Spotted on Spotify":
+                        self.playlist = playlist
+                        break
+            else:
+                print "Creating 'Spotted on Spotify' playlist..."
+                while True:
+                    playlist = self.sp.user_playlist_create(self.username, "Spotted on Spotify")
+                    if playlist['name'] == "Spotted on Spotify":
+                        self.playlist = playlist
+                        print "Completed creating playlist..."
+                        break
+                    else:
+                        self.sp.user_playlist_delete(self.username, playlist['name'])
+        except spotipy.client.SpotifyException as exc:
+            message = exc.msg.split(":\n ", 1)[1].encode('ascii', 'ignore')
+            errorExit("ERROR: Spotify service request failed: {0}".format(message), color="red")
 
-    def searchSong(self, artist, track, album):
+    def searchSong(self, artist, track, file):
         ''' Search and loop through each track. '''
-        track_results = self.sp.search(q='track:' + track, type='track')
-        tracks = track_results['tracks']['items']
-
-        if len(tracks) > 0:
+        try:
+            track_results = self.sp.search(q='track:' + '\"'+track+'\"', type='track')
+            tracks = track_results['tracks']['items']
+            
             best_result = None
-            for item in tracks:
-                ''' Find artist match (and album match if possible). '''
-                temp_track = str(item['name'].lower())
-                temp_artist = str(item['artists'][0]['name'].lower())
-                if temp_track == track and temp_artist == artist:
-                    if best_result is None:
-                        best_result = item
-                    elif str(item['album']).lower() == album:
-                        best_result = item
-                    elif best_result['popularity'] < item['popularity']:
-                        best_result = item
+            if len(tracks) > 0:
+                for item in tracks:
+                    ''' Find artist match '''
+                    try:
+                        # convert track and artist smart quotes to regular quotes
+                        search_track = str(item['name'])
+                        search_track = search_track.replace(u'\u2018', u"'").replace(u'\u2019', u"'")
+                        search_track = search_track.replace(u'\u201C', u'"').replace(u'\u201D', u'"')
+                        search_track.encode('ascii')
+
+                        search_artist = str(item['artists'][0]['name'])
+                        search_artist = search_artist.replace(u'\u2018', u"'").replace(u'\u2019', u"'")
+                        search_artist = search_artist.replace(u'\u201C', u'"').replace(u'\u201D', u'"')
+                        search_artist.encode('ascii')
+                    except UnicodeEncodeError:
+                        continue
+
+                    if track in search_track.lower() and artist in search_artist.lower():
+                        if best_result is None:
+                            best_result = item
+                        elif best_result['popularity'] < item['popularity']:
+                            best_result = item
+
+        except spotipy.client.SpotifyException as exc:
+            message = exc.msg.split(":\n ", 1)[1].encode('ascii', 'ignore')
+            errorExit("ERROR: Spotify service request failed: {0}".format(message), file=file, color="red")
 
         if best_result is not None:
             return (best_result, True)
         else:
             return (None, False)
 
-    def addSongToPlaylist(self, track):
-        print "Adding {0} by {1} to {2}...".format(track['name'], track['artists'][0]['name'], self.playlist['name'])
-        self.sp.user_playlist_add_tracks(self.username, self.playlist['id'], [track['uri']])
-        print "Success!"
-    
+
+    def addSongToPlaylist(self, track, file):
+        try:
+            print "Adding track to {0}...".format(self.playlist['name'])
+            self.sp.user_playlist_add_tracks(self.username, self.playlist['id'], [track['uri']])
+            print "Success!"
+        except spotipy.client.SpotifyException as exc:
+            message = exc.msg.split(":\n ", 1)[1].encode('ascii', 'ignore')
+            errorExit("ERROR: Spotify service request failed: {0}".format(message), file=file, color="red")
+
+def errorWarning(message, color="white"):
+    if color == "red":
+        puts(colored.red(message))
+    elif color == "yellow":
+        puts(colored.yellow(message))
+    else:
+        puts(colored.white(message))
+
+def errorExit(message, file=None, color="white"):
+    if color == "red":
+        puts(colored.red(message))
+    elif color == "yellow":
+        puts(colored.yellow(message))
+    else:
+        puts(colored.white(message))
+    if file is not None:
+        os.remove(file)
+    sys.exit(1)
 
 def displayIntro():
     print 
@@ -112,62 +172,83 @@ def warning():
         try:
             progress = raw_input("Would you like to continue? (y/n): ")
             if progress[0].lower() == 'n':
-                print "Thanks! Come again."
-                sys.exit()
+                errorExit("Thanks! Come again.")
             elif progress[0].lower() == 'y':
                 print "Continuing..."
                 break
             else:
-                puts(colored.red("Select from either Y or N."))
+                errorWarning("Select from either Y or N", color="red")
         except TypeError:
-            puts(colored.red("Enter a valid option: Y or N."))
+            errorWarning("Enter a valid option: Y or N", color="red")
 
-# TODO: fix sanitizing parameter list for ASCII/Unicode
-# TODO: only list tracks that are available on Spotify
-def narrowSearch(results):
-    ''' Reduces results from MusicBrainz search to search Spotify. '''
-    if len(results) == 1:
-        return results[0]
+def download(url):
+    global YOUTUBE_DL_OPTS
+    file = '%s/Downloads/download.temp' % os.path.expanduser('~')
+    YOUTUBE_DL_OPTS['outtmpl'] = file
+    
+    try:
+        with youtube_dl.YoutubeDL(YOUTUBE_DL_OPTS) as ydl:
+            ydl.download([url])
+    except ContentTooShortError:
+        errorWarning("Failed to download full file from {0}".format(url), color="red")
+        errorExit("Please try again...", file=file, color="red")
+    except:
+        errorWarning("Failed to download file from {0}".format(url), color="red")
+        errorExit("Please try again...", color="red")
+    return file
 
-    index = 0
-    selected_track = None
-    valid_results = []
+def AcoustIDSearch(filename):
+    try:
+        search = acoustid.match(ACOUSTID_API_KEY, filename)
+    except acoustid.NoBackendError:
+        errorExit("ERROR: Chromaprint library/tool not found", color="red")
+    except acoustid.FingerprintGenerationError:
+        errorExit("ERROR: Audio fingerprint could not be calculated", color="red")
+    except acoustid.WebServiceError as exc:
+        errorExit("ERROR: Web service request failed: {0}".format(exc.message), color="red")
 
-    print
-    while True:
-        print " %s %30.30s | %s" % ("INDEX", "ARTIST", "TRACK")
-        for item in results:
+    results = []
+    for score, rid, title, artist in search:
+        results.append([score * 100, rid, title, artist])
+    return sorted(results, reverse=True)
+
+def firstValid(results):
+    result = None
+    for i, entry in enumerate(results):
+        if entry.count(None) == 0:
             try:
-                item[0].decode('ascii')
-                item[1].decode('ascii')
+                # convert track and artist smart quotes to regular quotes
+                entry[2] = entry[2].replace(u'\u2018', u"'").replace(u'\u2019', u"'")
+                entry[2] = entry[2].replace(u'\u201C', u'"').replace(u'\u201D', u'"')
+                entry[2].encode('ascii')
+
+                entry[3] = entry[3].replace(u'\u2018', u"'").replace(u'\u2019', u"'")
+                entry[3] = entry[3].replace(u'\u201C', u'"').replace(u'\u201D', u'"')
+                entry[3].encode('ascii')
+                result = entry
+                break
             except UnicodeEncodeError:
                 continue
-            else:
-                print "   %d %32.32s | %s" % (index, item[0], item[1])
-                valid_results.append(item)
-                index += 1
-        else:
-            index = 0
+    return result
 
-        try:
-            selection = raw_input("Please enter the matching index of your song: ")
-            if int(selection) < 0 or len(results) <= int(selection):
-                error = "Enter a valid index: 0 - %d." % len(results) - 1
-                puts(colored.red(error))
-                continue
-        except (TypeError, ValueError):
-            error = "Enter a valid integer index: 0 - %d." % len(results) - 1
-            puts(colored.red(error))
-        else:
-            selected_track = valid_results[int(selection)]
-            break
 
-    return selected_track
+def cleanArtist(artist):
+    clean_artists = re.split(' - | : |- |: ', artist)[:2]
+    clean_artist = clean_artists[0].split(' & ')[0]
+    return clean_artist
+
+def cleanTrack(track):
+    clean_track = re.sub(r'\(| \([^)]*\)|\) ', '', track)
+    clean_track = re.sub(r'\[| \[[^\]]*\]|\] ', '', clean_track)
+    return clean_track
+
 
 def main():
 
-    if len(sys.argv) > 1:
+    if len(sys.argv) == 2:
         url = sys.argv[1]
+    elif len(sys.argv) > 2:
+        errorWarning("WARNING: Only using first command line argument", color="yellow")
 
     try:
         init()
@@ -182,21 +263,53 @@ def main():
 
         if 'url' not in locals():
             url = raw_input("Please enter a valid YouTube/SoundCloud URL: ")
-        print "Finding matches..."
 
-        results = audiojack.get_results(url)
-        hit = narrowSearch(results)
+        print "Downloading mp3 from URL..."
+        temp_file = download(url)
+        prefix, suffix = os.path.splitext(temp_file)
+        file = str(prefix) + ".mp3"
 
-        track, found_match = spotted.searchSong(hit[0].lower(), hit[1].lower(), hit[2].lower())
-        if found_match:
-            spotted.addSongToPlaylist(track)
+        print "Analyzing audio fingerprint..."
+        results = AcoustIDSearch(file)
+        result = firstValid(results)
+
+        if result is not None:
+            # Using highest percentage match for Spotify search
+            percentage = int(result[0])
+            hit_artist = cleanArtist(str(result[3]))
+            hit_track = cleanTrack(str(result[2]))
         else:
-            error = "Failed to find a match for %s by %s on Spotify" % (hit[1], hit[0])
-            puts(colored.red(error))
+            errorExit("Failed to find a match for your track on the MusicBrainz database", file=file, color="red")
+
+        hit_full = "{0} by {1}".format(hit_track, hit_artist)
+        puts(colored.cyan("{0:04.2f}% MATCH: {1}".format(percentage, hit_full)))
+        print "Searching Spotify..."
+        track, found_match = spotted.searchSong(hit_artist.lower(), hit_track.lower(), file)
+        
+        if found_match:
+            while True:
+                try:
+                    full_title = "{0} by {1}".format(track['name'], track['artists'][0]['name'])
+                    prompt = "Would you like to add {0} to {1}? (y/n): ".format(full_title, spotted.playlist['name'])
+                    add = raw_input(prompt)
+                    if add[0].lower() == 'n':
+                        errorExit("Thanks for trying! Come again.", file=file)
+                    elif add[0].lower() == 'y':
+                        spotted.addSongToPlaylist(track, file)
+                        break
+                    else:
+                        errorWarning("Select from either Y or N", color="red")
+                except TypeError:
+                    errorWarning("Enter a valid option: Y or N", color="red")
+        else:
+            error = "Failed to find a match for {0} by {1} on Spotify".format(hit_track, hit_artist)
+            errorExit(error, file=file, color="red")
 
     except KeyboardInterrupt:
-        print "\nExiting Spotted on Spotify..."
-        sys.exit(1)
+        if 'file' not in locals():
+            errorExit("\nExiting Spotted on Spotify...")
+        else:
+            errorExit("\nExiting Spotted on Spotify...", file=file)
 
 if __name__ == "__main__":
     main()

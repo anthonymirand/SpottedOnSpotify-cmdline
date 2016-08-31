@@ -18,17 +18,13 @@ That's it! _You're authenticated and ready to go!_
 $ spotted-on-spotify [ URL ]
 ```
 
-When you have a specific YouTube or SoundCloud URL that you would like to search on Spotify, run the script with the URL (or wait to enter the URL while in the application), and choose the best match!
+When you have a specific YouTube or SoundCloud URL that you would like to search on Spotify, run the script with the URL (or wait to enter the URL while in the application), and let the _magic_ happen!
 
-Running the script allows the creation and modification of a public Spotify playlist appropriately named "Spotted on Spotify" where the successful searches will be saved.
+Running the script allows the creation and modification of a public Spotify playlist appropriately named "Spotted on Spotify" where successful searches will be saved.
 
 ## TODO
 
-* Catch errors from [youtube_dl](https://github.com/rg3/youtube-dl)
-* Catch errors from [spotipy](https://github.com/plamere/spotipy)
-* Check for valid URLs
-* Sanitize MusicBrainz results for ASCII/Unicode characters
-* Use/create a more efficient track analysis tool:
-    * Implement MusicBrainz Picard for audio fingerprint recognition
-    * Use [MBSpotify](https://github.com/metabrainz/mbspotify) for direct matching between MusicBrainz Identifiers and Spotify URIs
+* Catch invalid URL error from [youtube_dl](https://github.com/rg3/youtube-dl)
+* Use/create a more efficient search/mapping from MusicBrainz to Spotify:
+    * [MBSpotify](https://github.com/metabrainz/mbspotify) for direct matching between MusicBrainz Identifiers and Spotify URIs
 * Encrypt environment variables for safe use  ~~shhh~~

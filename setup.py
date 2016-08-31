@@ -3,7 +3,6 @@
 """setup.py: setuptools control."""
 
 
-import re
 from setuptools import setup
 
 with open('./etc/version.txt', 'r') as ver:
@@ -14,12 +13,12 @@ setup(
     version = VERSION[0],
     description = "Youtube/SoundCloud to Spotify python command line application.",
     long_description = open("README.md").read(),
-    url = "http://www.github.com/anthonymirand/SpottedOnSpotify",
+    url = "https://github.com/anthonymirand/SpottedOnSpotify-cmdline",
     author = "Anthony Mirand",
     author_email = "anthonypmirand@gmail.com",
     license = "MIT",
     classifiers = [
-        "Development Status :: 2 - Pre-Alpha",
+        "Development Status :: 4 - Beta",
 
         "Intended Audience :: Developers",
         "Topic :: Multimedia :: Sound/Audio :: Analysis",
@@ -29,16 +28,12 @@ setup(
         "Programming Language :: Python",
         "Programming Language :: Python :: 2.7"
     ],
-    keywords = "spotify youtube soundcloud",
+    keywords = "spotify youtube soundcloud audio fingerprints",
 
     install_requires = [
-        # AudioJack dependencies
         'ffmpeg-normalize',
-        'mutagen',
-        'musicbrainzngs',
         'youtube_dl',
-
-        # Spotted on Spotify dependencies
+        'pyacoustid',
         'spotipy',
         'clint',
         'colorama',
