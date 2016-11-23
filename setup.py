@@ -4,13 +4,12 @@
 
 
 from setuptools import setup
+from spotted_on_spotify import conf
 
-with open('./etc/version.txt', 'r') as ver:
-    VERSION = ver.read().splitlines()
 
 setup(
     name = "spotted-on-spotify",
-    version = VERSION[0],
+    version = conf.VERSION,
     description = "Youtube/SoundCloud to Spotify python command line application.",
     long_description = open("README.md").read(),
     url = "https://github.com/anthonymirand/SpottedOnSpotify-cmdline",

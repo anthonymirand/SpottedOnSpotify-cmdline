@@ -26,11 +26,11 @@ import youtube_dl
 import spotipy
 import spotipy.util as util
 
-with open('./etc/version.txt', 'r') as ver:
-    VERSION = ver.read().splitlines()
+import conf
+VERSION = conf.VERSION
 
 init(strip=not sys.stdout.isatty())
-ACOUSTID_API_KEY = "qY3621bc1V"
+ACOUSTID_API_KEY = conf.ACOUSTID_API_KEY
 SPOTIPY_SCOPE = "playlist-modify-public"
 
 YOUTUBE_DL_OPTS = {
@@ -46,7 +46,6 @@ YOUTUBE_DL_OPTS = {
 
 
 class SpottedOnSpotify:
-
     def __init__(self):
         self.username = None
         self.sp = None

@@ -1,3 +1,0 @@
-a6a7974f555849a8b63e9191ebc12629
-c13b81df0c33434ea4596c9589ca1aab
-https://github.com/anthonymirand/SpottedOnSpotify-cmdline

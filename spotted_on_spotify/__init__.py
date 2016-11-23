@@ -5,14 +5,11 @@
 
 
 import os
+import conf
 
-with open('./etc/environment.txt', 'r') as env:
-    info = env.read().splitlines()
-
-if len(info) == 3:
-    os.environ['SPOTIPY_CLIENT_ID']     = str(info[0])
-    os.environ['SPOTIPY_CLIENT_SECRET'] = str(info[1])
-    os.environ['SPOTIPY_REDIRECT_URI']  = str(info[2])
+os.environ['SPOTIPY_CLIENT_ID']     = conf.SPOTIPY_CLIENT_ID
+os.environ['SPOTIPY_CLIENT_SECRET'] = conf.SPOTIPY_CLIENT_SECRET
+os.environ['SPOTIPY_REDIRECT_URI']  = conf.SPOTIPY_REDIRECT_URI
 
 with open('./etc/FPCALC', 'r') as fpcalc:
     os.environ['FPCALC'] = fpcalc.name
