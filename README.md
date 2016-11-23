@@ -4,6 +4,13 @@
 
 Have you ever gone back and forth between YouTube/SoundCloud trying to add songs to your Spotify playlist, only to waste time and find that the song is not available on Spotify? Look no further!
 
+## Requirements
+
+From the [AcoustID](https://acoustid.org/chromaprint) documentation:
+> The [Chromaprint](https://acoustid.org/chromaprint) fingerprinting library makes use of the `fpcalc` command-line tool. The static binaries for the `fpcalc` tool can be found [here](https://acoustid.org/chromaprint). 
+
+Set the `FPCALC` environment variable to the location of the operating system appropriate version of the downloaded executable. 
+
 ## Setup
 
 * `pip install spotted-on-spotify`
@@ -27,4 +34,4 @@ Running the script allows the creation and modification of a public Spotify play
 * Catch invalid URL error from [youtube_dl](https://github.com/rg3/youtube-dl)
 * Use/create a more efficient search/mapping from MusicBrainz to Spotify:
     * [MBSpotify](https://github.com/metabrainz/mbspotify) for direct matching between MusicBrainz Identifiers and Spotify URIs
-* Encrypt environment variables for safe use  ~~shhh~~
+* Include `fpcalc` with package

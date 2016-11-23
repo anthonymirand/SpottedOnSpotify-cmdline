@@ -243,7 +243,6 @@ def cleanTrack(track):
 
 
 def main():
-
     if len(sys.argv) == 2:
         url = sys.argv[1]
     elif len(sys.argv) > 2:
