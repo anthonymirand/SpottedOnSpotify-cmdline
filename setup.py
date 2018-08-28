@@ -29,6 +29,7 @@ setup(
     'pyacoustid',
     'spotipy',
     'clint',
+    'audioread',
   ],
   packages=['spotted_on_spotify'],
   entry_points={
