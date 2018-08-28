@@ -1,10 +1,23 @@
 # A configuration file for Spotted on Spotify
 # Included for structure and readability
 
-VERSION="0.1.5"
+VERSION='0.1.5'
 
-SPOTIPY_CLIENT_ID=""
-SPOTIPY_CLIENT_SECRET=""
-SPOTIPY_REDIRECT_URI="https://github.com/anthonymirand/SpottedOnSpotify-cmdline"
+YOUTUBE_DL_OPTS={
+  'format' : 'bestaudio',
+  'postprocessors' : [{
+    'key' : 'FFmpegExtractAudio',
+    'preferredcodec' : 'mp3',
+    'preferredquality' : '256'
+  }],
+  'quiet' : True,
+  'no_warnings' : True,
+  'outtmpl' : '/tmp/download.mp3'
+}
 
-ACOUSTID_API_KEY=""
+SPOTIPY_SCOPE = 'playlist-modify-public'
+SPOTIPY_CLIENT_ID=''
+SPOTIPY_CLIENT_SECRET=''
+SPOTIPY_REDIRECT_URI='https://github.com/anthonymirand/SpottedOnSpotify-cmdline'
+
+ACOUSTID_API_KEY=''

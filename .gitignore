@@ -88,5 +88,11 @@ ENV/
 # Rope project settings
 .ropeproject
 
+''' Specific to spotted_on_spotify '''
+
 # Configuration file
 spotted_on_spotify/conf.py
+
+# Spotipy cache
+*/.cache-anthonymirand
+
