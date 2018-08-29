@@ -1,7 +1,7 @@
 # A configuration file for Spotted on Spotify
 # Included for structure and readability
 
-VERSION='0.1.5'
+VERSION='1.0.0'
 
 YOUTUBE_DL_OPTS={
   'format' : 'bestaudio',
